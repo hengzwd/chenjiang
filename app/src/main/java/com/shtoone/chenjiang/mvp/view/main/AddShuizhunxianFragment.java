@@ -473,6 +473,7 @@ public class AddShuizhunxianFragment extends BaseFragment<AddYusheshuizhunxianCo
         ((MainActivity) _mActivity).openDrawer();
     }
 
+
     private void revealClose() {
         ll.post(new Runnable() {
             @Override

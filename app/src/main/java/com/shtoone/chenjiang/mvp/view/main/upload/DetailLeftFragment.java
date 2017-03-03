@@ -99,6 +99,7 @@ public class DetailLeftFragment extends BaseFragment {
     }
 
     private void initData() {
+
         if (BaseApplication.mUserInfoBean != null && BaseApplication.mUserInfoBean.getDept() != null
                 && !TextUtils.isEmpty(BaseApplication.mUserInfoBean.getDept().getOrgName())) {
             tvBiaoduan.setText(BaseApplication.mUserInfoBean.getDept().getOrgName());
@@ -118,16 +119,16 @@ public class DetailLeftFragment extends BaseFragment {
         }
 
         //设置基点数和测点数
-        if (!TextUtils.isEmpty(mShuizhunxianData.getJidianshu())) {
+        if (mShuizhunxianData != null&&!TextUtils.isEmpty(mShuizhunxianData.getJidianshu())) {
             tvJidianshu.setText("基点(" + mShuizhunxianData.getJidianshu() + ")：");
         }
 
-        if (!TextUtils.isEmpty(mShuizhunxianData.getCedianshu())) {
+        if (mShuizhunxianData != null&&!TextUtils.isEmpty(mShuizhunxianData.getCedianshu())) {
             tvCedianshu.setText("测点(" + mShuizhunxianData.getCedianshu() + ")：");
         }
 
         //设置基点和测点
-        if (!TextUtils.isEmpty(mShuizhunxianData.getXianluxinxi())) {
+        if (mShuizhunxianData != null&&!TextUtils.isEmpty(mShuizhunxianData.getXianluxinxi())) {
             StringBuffer sbJidian = new StringBuffer();
             StringBuffer sbCedian = new StringBuffer();
             String[] arrayJidianAndCedian = mShuizhunxianData.getXianluxinxi().split(",");

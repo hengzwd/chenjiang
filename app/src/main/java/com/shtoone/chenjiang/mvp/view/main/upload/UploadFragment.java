@@ -1,5 +1,6 @@
 package com.shtoone.chenjiang.mvp.view.main.upload;
 
+import android.app.Dialog;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -16,12 +17,17 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.shtoone.chenjiang.BaseApplication;
 import com.shtoone.chenjiang.R;
 import com.shtoone.chenjiang.common.Constants;
 import com.shtoone.chenjiang.common.DialogHelper;
 import com.shtoone.chenjiang.common.ToastUtils;
 import com.shtoone.chenjiang.mvp.contract.upload.UploadContract;
+import com.shtoone.chenjiang.mvp.model.entity.bean.ALLDATA;
+import com.shtoone.chenjiang.mvp.model.entity.db.ORIGData;
+import com.shtoone.chenjiang.mvp.model.entity.db.RTData;
+import com.shtoone.chenjiang.mvp.model.entity.db.SZXData;
 import com.shtoone.chenjiang.mvp.model.entity.db.ShuizhunxianData;
 import com.shtoone.chenjiang.mvp.model.entity.db.YusheshuizhunxianData;
 import com.shtoone.chenjiang.mvp.presenter.upload.UploadPresenter;
@@ -30,6 +36,7 @@ import com.shtoone.chenjiang.mvp.view.adapter.UploadRVAdapter;
 import com.shtoone.chenjiang.mvp.view.adapter.base.OnItemClickListener;
 import com.shtoone.chenjiang.mvp.view.base.BaseFragment;
 import com.shtoone.chenjiang.mvp.view.main.MainActivity;
+import com.shtoone.chenjiang.widget.CircleTextProgressbar;
 import com.shtoone.chenjiang.widget.PageStateLayout;
 import com.trycatch.mysnackbar.Prompt;
 import com.trycatch.mysnackbar.TSnackbar;
@@ -71,8 +78,12 @@ public class UploadFragment extends BaseFragment<UploadContract.Presenter> imple
     private View mFooterLoading, mFooterNotLoading, mFooterError;
     private boolean isLoading;
     private List<YusheshuizhunxianData> listChecked = new ArrayList<>();
+
+    private ArrayList<ALLDATA> alldataArrayList = new ArrayList<ALLDATA>();
+    private ALLDATA alldata = new ALLDATA();
     private int pagination = 0;
     private ViewGroup viewGroup;
+    private Dialog progressDialog;
 
     public static UploadFragment newInstance() {
         return new UploadFragment();
@@ -112,6 +123,12 @@ public class UploadFragment extends BaseFragment<UploadContract.Presenter> imple
         setLoadMore();
         initPageStateLayout(pagestatelayout);
         initPtrFrameLayout(ptrframelayout);
+
+        progressDialog = new MaterialDialog.Builder(_mActivity)
+                .content("正在拼命上传中，请不要退出界面")
+                .progress(true, 0).build();
+        progressDialog.setCancelable(false);
+        progressDialog.setCanceledOnTouchOutside(false);
     }
 
     private void setRecyclerview() {
@@ -126,6 +143,7 @@ public class UploadFragment extends BaseFragment<UploadContract.Presenter> imple
             public void onCheckedChanged(CompoundButton compoundButton, int position) {
                 if (compoundButton.isChecked()) {
                     listChecked.add(mAdapter.getData().get(position));
+//                    alldataArrayList.add(mAdapter.getData().get(position));
                     if (listChecked.size() == mAdapter.getData().size()) {
                         cbCheckAll.setChecked(true);
                     }
@@ -240,6 +258,12 @@ public class UploadFragment extends BaseFragment<UploadContract.Presenter> imple
     }
 
     @Override
+    public void responseALLDATA(ALLDATA alldata) {
+        this.alldata = alldata;
+
+    }
+
+    @Override
     public void onUploaded(int intMessage, String strMessage) {
         TSnackbar snackBar = TSnackbar.make(viewGroup, strMessage, TSnackbar.LENGTH_SHORT, TSnackbar.APPEAR_FROM_TOP_TO_DOWN);
         if (intMessage == Constants.UPLAND_SUCCESS) {
@@ -248,6 +272,10 @@ public class UploadFragment extends BaseFragment<UploadContract.Presenter> imple
             snackBar.setPromptThemBackground(Prompt.ERROR);
         }
         snackBar.show();
+        if (progressDialog != null) {
+            progressDialog.dismiss();
+
+        }
     }
 
     @Override
@@ -327,8 +355,15 @@ public class UploadFragment extends BaseFragment<UploadContract.Presenter> imple
                     mSnackbar.show();
                     return;
                 }
-                mPresenter.upload(listChecked);
+                if (progressDialog != null) {
+
+                    progressDialog.show();
+                }
+
+                mPresenter.upload(alldata);
+//                mPresenter.upload(listChecked);
                 DialogHelper.loadingSnackbar(viewGroup, "正在努力上传，请稍后…", DialogHelper.APPEAR_FROM_TOP_TO_DOWN);
+
                 break;
         }
     }

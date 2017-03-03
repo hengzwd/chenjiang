@@ -17,8 +17,11 @@ import java.util.List;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Part;
 import retrofit2.http.Query;
 import rx.Observable;
 
@@ -65,6 +68,11 @@ public interface ApiService {
     Observable<StaffBean> staffDownload();
 
     //上传水准线
-    @POST("app.do?originalDataUpload")
+    @POST("app.do?LineUpload")
     Call<ResponseBody> upload(@Query("original") String shuizhunxianBeen);
+
+    //上传水准线
+    @FormUrlEncoded
+    @POST("app.do?dataAllUpload")
+    Call<ResponseBody> upload0(@Field("allData") String alldate);
 }

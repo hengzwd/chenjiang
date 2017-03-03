@@ -27,6 +27,7 @@ import com.shtoone.chenjiang.mvp.view.base.BaseActivity;
 import com.shtoone.chenjiang.mvp.view.main.project.ProjectActivity;
 import com.shtoone.chenjiang.mvp.view.main.setting.SettingFragment;
 import com.shtoone.chenjiang.mvp.view.main.upload.UploadFragment;
+import com.shtoone.chenjiang.mvp.view.others.AboutFragment;
 import com.shtoone.chenjiang.mvp.view.others.LaunchActivity;
 import com.shtoone.chenjiang.utils.SharedPreferencesUtils;
 import com.socks.library.KLog;
@@ -164,7 +165,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 } else if (id == R.id.relogin) {
                     go2Login();
                 } else if (id == R.id.about) {
-
+                    start(AboutFragment.newInstance());
                 } else if (id == R.id.version) {
                     VersionFragment fragment = findFragment(VersionFragment.class);
                     if (fragment == null) {

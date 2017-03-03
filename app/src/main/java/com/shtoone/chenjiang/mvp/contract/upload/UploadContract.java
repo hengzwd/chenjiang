@@ -2,6 +2,7 @@ package com.shtoone.chenjiang.mvp.contract.upload;
 
 
 import com.shtoone.chenjiang.mvp.contract.base.BaseContract;
+import com.shtoone.chenjiang.mvp.model.entity.bean.ALLDATA;
 import com.shtoone.chenjiang.mvp.model.entity.db.YusheshuizhunxianData;
 
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.List;
 public interface UploadContract {
     interface View extends BaseContract.View {
         void responseShuizhunxianData(List<YusheshuizhunxianData> mShuizhunxianData, int pagination);
+        void responseALLDATA(ALLDATA alldata);
+
 
         void onUploaded(int intMessageType, String strMessage);
     }
@@ -20,6 +23,11 @@ public interface UploadContract {
     interface Presenter extends BaseContract.Presenter {
         void requestShuizhunxianData(int pagination);
 
+        void requestALLDATA(int pagination);
+
         void upload(List<YusheshuizhunxianData> listShuizhunxian);
+
+        void upload(ALLDATA alldata);
+
     }
 }

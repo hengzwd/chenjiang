@@ -1,21 +1,31 @@
 package com.shtoone.chenjiang.mvp.presenter.upload;
 
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.os.Environment;
+import android.support.annotation.MainThread;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.shtoone.chenjiang.BaseApplication;
 import com.shtoone.chenjiang.common.Constants;
+import com.shtoone.chenjiang.common.DialogHelper;
 import com.shtoone.chenjiang.mvp.contract.upload.UploadContract;
 import com.shtoone.chenjiang.mvp.model.HttpHelper;
+import com.shtoone.chenjiang.mvp.model.entity.bean.ALLDATA;
 import com.shtoone.chenjiang.mvp.model.entity.bean.CedianInfoBean;
 import com.shtoone.chenjiang.mvp.model.entity.bean.ShuizhunxianBean;
 import com.shtoone.chenjiang.mvp.model.entity.bean.YusheshuizhunxianInfoBean;
 import com.shtoone.chenjiang.mvp.model.entity.db.CezhanData;
 import com.shtoone.chenjiang.mvp.model.entity.db.DuanmianData;
 import com.shtoone.chenjiang.mvp.model.entity.db.GongdianData;
+import com.shtoone.chenjiang.mvp.model.entity.db.ORIGData;
+import com.shtoone.chenjiang.mvp.model.entity.db.RTData;
+import com.shtoone.chenjiang.mvp.model.entity.db.SZXData;
 import com.shtoone.chenjiang.mvp.model.entity.db.ShuizhunxianData;
 import com.shtoone.chenjiang.mvp.model.entity.db.YusheshuizhunxianData;
 import com.shtoone.chenjiang.mvp.presenter.base.BasePresenter;
+import com.shtoone.chenjiang.widget.CircleTextProgressbar;
 import com.socks.library.KLog;
 
 import org.json.JSONException;
@@ -38,6 +48,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.adapter.rxjava.HttpException;
+import retrofit2.http.HTTP;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -60,6 +71,7 @@ public class UploadPresenter extends BasePresenter<UploadContract.View> implemen
     @Override
     public void start() {
         requestShuizhunxianData(0);
+        requestALLDATA(0);
     }
 
     @Override
@@ -97,6 +109,47 @@ public class UploadPresenter extends BasePresenter<UploadContract.View> implemen
     }
 
     @Override
+    public void requestALLDATA(final int pagination) {
+
+        mRxManager.add(Observable.create(new Observable.OnSubscribe<ALLDATA>() {
+            @Override
+            public void call(Subscriber<? super ALLDATA> subscriber) {
+                ALLDATA alldata = new ALLDATA();
+                List<ORIGData> origDataList = null;
+                List<RTData> rtDataList = null;
+                List<SZXData> szxDataList = null;
+
+                try {
+                    origDataList = DataSupport.order("id").limit(Constants.PAGE_SIZE)
+                            .offset(pagination * Constants.PAGE_SIZE)
+                            .find(ORIGData.class);
+                    rtDataList = DataSupport.where().order("id").limit(Constants.PAGE_SIZE)
+                            .offset(pagination * Constants.PAGE_SIZE).find(RTData.class);
+
+                    szxDataList = DataSupport.where().order("id").limit(Constants.PAGE_SIZE)
+                            .offset(pagination * Constants.PAGE_SIZE).find(SZXData.class);
+
+                    alldata.setOriginalDatas(origDataList);
+                    alldata.setResultDatas(rtDataList);
+                    alldata.setSzxZhuBiaoDatas(szxDataList);
+
+                    subscriber.onNext(alldata);
+                } catch (Exception e) {
+                    subscriber.onError(e);
+                }
+            }
+        }).subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new RxSubscriber<ALLDATA>() {
+                    @Override
+                    public void _onNext(ALLDATA alldata) {
+
+                        getView().responseALLDATA(alldata);
+                    }
+                }));
+    }
+
+    @Override
     public void upload(List<YusheshuizhunxianData> listShuizhunxian) {
         mRxManager.add(
                 Observable.from(listShuizhunxian).map(new Func1<YusheshuizhunxianData, ShuizhunxianBean>() {
@@ -104,7 +157,7 @@ public class UploadPresenter extends BasePresenter<UploadContract.View> implemen
                     public ShuizhunxianBean call(YusheshuizhunxianData mYusheshuizhunxianData) {
                         ShuizhunxianData mShuizhunxianData = DataSupport.where("yusheshuizhunxianID = ? and chuangjianshijian = ? "
                                 , String.valueOf(mYusheshuizhunxianData.getId()), mYusheshuizhunxianData.getXiugaishijian())
-                                .findFirst(ShuizhunxianData.class);
+                                        .findFirst(ShuizhunxianData.class);
 
                         List<CezhanData> listCezhan = DataSupport.where("shuizhunxianID = ? ", String.valueOf(mShuizhunxianData.getId()))
                                 .order("number").find(CezhanData.class);
@@ -206,4 +259,48 @@ public class UploadPresenter extends BasePresenter<UploadContract.View> implemen
                         })
         );
     }
+
+    @Override
+    public void upload(ALLDATA alldata) {
+
+
+        Gson gson=new Gson();
+        HttpHelper.getInstance().initService().upload0(gson.toJson(alldata,ALLDATA.class)).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    try {
+                        KLog.e("responseBody:" + response.body().string());
+                        getView().onUploaded(Constants.UPLAND_SUCCESS, "恭喜，上传成功");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    getView().onUploaded(Constants.UPLAND_FAIL, "上传失败，请重试");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                t.printStackTrace();
+                KLog.e(t);
+
+                if (t instanceof ConnectException) {
+                    getView().onUploaded(Constants.UPLAND_FAIL, "网络异常，请重试");
+                } else if (t instanceof HttpException) {
+                    getView().onUploaded(Constants.UPLAND_FAIL, "服务器异常");
+                } else if (t instanceof SocketTimeoutException) {
+                    getView().onUploaded(Constants.UPLAND_FAIL, "连接超时，请重试");
+                } else if (t instanceof JSONException) {
+                    getView().onUploaded(Constants.UPLAND_FAIL, "解析异常，请重试");
+                } else {
+                    getView().onUploaded(Constants.UPLAND_FAIL, "数据异常");
+                }
+            }
+        });
+
+    }
+
+
+
 }
